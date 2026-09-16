@@ -6,8 +6,8 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt-strategy';
-import { GoogleOAuthConfig } from 'src/providers/google-oauth-config';
 import { NeonDBProvider } from 'src/providers/postgres-db';
+import { GoogleOAuthConfig } from 'src/providers/google-oauth-config';
 
 @Global()
 @Module({
