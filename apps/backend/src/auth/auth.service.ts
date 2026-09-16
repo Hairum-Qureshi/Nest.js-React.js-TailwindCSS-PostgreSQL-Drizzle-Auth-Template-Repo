@@ -1,20 +1,23 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { OAuth2Client } from 'google-auth-library';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../schemas/User';
 import { JwtService } from '@nestjs/jwt';
-import type { UserPayload } from '@repo/shared-types';
-import crypto from 'crypto';
+import { UserPayload } from '@repo/shared-types';
+import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import SnowflakeId from 'snowflake-id';
+import { firstValueFrom } from 'rxjs';
+import { eq } from 'drizzle-orm';
+import { usersTable } from 'src/schema';
+import type { Database } from 'src/providers/postgres-db';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
     @Inject('GoogleOAuthClient') private googleOAuthClient: OAuth2Client,
     private configService: ConfigService,
+    @Inject('NeonDBProvider') private readonly db: Database,
+    private httpService: HttpService,
   ) {}
 
   getAuthCookieOptions() {
@@ -25,33 +28,63 @@ export class AuthService {
     };
   }
 
-  async googleAuth(token: string): Promise<{ jwtToken: string }> {
-    const ticket = await this.googleOAuthClient.verifyIdToken({
-      idToken: token,
-      audience: this.configService.get<string>('GOOGLE_OAUTH_CLIENT_ID'),
-    });
+  async googleAuth(
+    accessToken: string,
+  ): Promise<{ jwtToken: string; newAccount: boolean }> {
+    const response = await firstValueFrom(
+      this.httpService.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }),
+    );
 
-    const { email, picture, given_name, family_name } =
-      ticket.getPayload() || {};
-
-    let user = await this.userModel.findOne({ email });
-
-    if (!user) {
-      user = new this.userModel({
-        _id: crypto.randomUUID(),
-        firstName: given_name || 'GoogleUser',
-        lastName: family_name || 'GoogleUser',
-        email,
-        profilePicture: picture,
-      });
-      await user.save();
+    if (response.status !== 200) {
+      throw new UnauthorizedException('Invalid Google access token');
     }
 
-    const jwtToken = this.jwtService.sign({
-      _id: user._id,
-    });
+    const googleUser = (await response.data) as {
+      email: string;
+      picture: string;
+      given_name: string;
+      family_name: string;
+    };
 
-    return { jwtToken };
+    const { email, picture, given_name, family_name } = googleUser;
+
+    let [user] = await this.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email))
+      .limit(1);
+
+    if (!user) {
+      const snowflake = new SnowflakeId({
+        mid: 42,
+        offset: (2026 - 1970) * 31536000 * 1000,
+      });
+
+      [user] = await this.db
+        .insert(usersTable)
+        .values({
+          id: snowflake.generate(),
+          first_name: given_name,
+          last_name: family_name,
+          email,
+          profile_picture: picture,
+        })
+        .returning();
+      const jwtToken = this.jwtService.sign({ id: String(user.id) });
+
+      return {
+        jwtToken,
+        newAccount: true,
+      };
+    }
+
+    const jwtToken = this.jwtService.sign({ id: String(user.id) });
+
+    return { jwtToken, newAccount: false };
   }
 
   getCurrentUser(user: UserPayload): UserPayload {

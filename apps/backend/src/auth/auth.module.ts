@@ -1,13 +1,13 @@
 import { Global, Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
-import { MongooseModule } from '@nestjs/mongoose';
-import { User, UserSchema } from '../schemas/User';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt-strategy';
-import { GoogleOAuthConfig } from 'src/config/google-oauth-config';
+import { GoogleOAuthConfig } from 'src/providers/google-oauth-config';
+import { NeonDBProvider } from 'src/providers/postgres-db';
 
 @Global()
 @Module({
@@ -25,14 +25,9 @@ import { GoogleOAuthConfig } from 'src/config/google-oauth-config';
         };
       },
     }),
-    MongooseModule.forFeature([
-      {
-        name: User.name,
-        schema: UserSchema,
-      },
-    ]),
+    HttpModule,
   ],
-  providers: [AuthService, JwtStrategy, GoogleOAuthConfig],
+  providers: [AuthService, JwtStrategy, GoogleOAuthConfig, NeonDBProvider],
   controllers: [AuthController],
   exports: [PassportModule, JwtStrategy, AuthService],
 })

@@ -7,29 +7,26 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 import { CurrentUser } from '../decorators/currentUser.decorator';
-import type { UserPayload } from '@repo/shared-types';
 import express from 'express';
 import type { Response } from 'express';
+import type { UserPayload } from '@repo/shared-types';
 import { BearerToken } from 'src/decorators/bearerToken.decorator';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('google/sign-in')
   @UsePipes(new ValidationPipe())
   async googleAuth(
-    @BearerToken() token: string,
+    @BearerToken() accessToken: string,
     @Res({ passthrough: true }) res: express.Response,
-  ): Promise<{ jwtToken: string }> {
-    const { jwtToken } = await this.authService.googleAuth(token);
+  ): Promise<{ jwtToken: string; newAccount: boolean }> {
+    const { jwtToken, newAccount } =
+      await this.authService.googleAuth(accessToken);
 
     res.cookie('auth-session', jwtToken, {
       httpOnly: true,
@@ -38,7 +35,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { jwtToken };
+    return { jwtToken, newAccount };
   }
 
   @Post('sign-out')
