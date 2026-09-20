@@ -12,37 +12,37 @@ This is a **template**, not a production-ready system.
 
 This template provides:
 
-- A correct, minimal **monorepo setup**
-- Clear separation of frontend and backend concerns
-- Centralized dependency management
-- Coordinated development scripts
-- **Google OAuth authentication across the frontend and backend**
-- JWT-based authentication for authenticated backend requests
-- A shared `@repo/shared-types` package so the frontend and backend can consume the same TypeScript types instead of duplicating them
-- **PostgreSQL + NeonDB persistence** using **Drizzle ORM**
+* A correct, minimal **monorepo setup**
+* Clear separation of frontend and backend concerns
+* Centralized dependency management
+* Coordinated development scripts
+* **Google OAuth authentication across the frontend and backend**
+* JWT-based authentication for authenticated backend requests
+* A shared `@repo/shared-types` package so the frontend and backend can consume the same TypeScript types instead of duplicating them
+* **PostgreSQL + NeonDB persistence** using **Drizzle ORM**
 
 Authentication is included, but only to the extent required to:
 
-- Sign users in with Google on the frontend
-- Send the Google authentication credential to the backend
-- Verify the Google identity on the backend
-- Establish an authenticated session using a backend-issued JWT
+* Sign users in with Google on the frontend
+* Send the Google authentication credential to the backend
+* Verify the Google identity on the backend
+* Establish an authenticated session using a backend-issued JWT
 
 Everything else remains intentionally unopinionated.
 
 ---
 
-## What This Template Is _Not_
+## What This Template Is *Not*
 
 This template does **not** try to be a full application starter.
 
 It does **not** include:
 
-- User roles or permissions
-- Auth-based authorization rules
-- API clients
-- Deployment, Docker, or CI/CD
-- Production session-management infrastructure
+* User roles or permissions
+* Auth-based authorization rules
+* API clients
+* Deployment, Docker, or CI/CD
+* Production session-management infrastructure
 
 Those decisions are left to the user.
 
@@ -69,12 +69,12 @@ Those decisions are left to the user.
 
 ### Key Structural Notes
 
-- This **is a monorepo**
-- Dependency management is centralized at the **root**
-- Each app remains a **standalone project**
-- Shared TypeScript types live in `packages/shared-types` and are consumed via `@repo/shared-types`
-- New shared types should be added under `packages/shared-types/src`, organized into folders by kind and re-exported from `packages/shared-types/src/index.ts`
-- The `packages/` folder is intentionally included so shared logic, schemas, or types can be introduced later without duplicating code across apps
+* This **is a monorepo**
+* Dependency management is centralized at the **root**
+* Each app remains a **standalone project**
+* Shared TypeScript types live in `packages/shared-types` and are consumed via `@repo/shared-types`
+* New shared types should be added under `packages/shared-types/src`, organized into folders by kind and re-exported from `packages/shared-types/src/index.ts`
+* The `packages/` folder is intentionally included so shared logic, schemas, or types can be introduced later without duplicating code across apps
 
 ---
 
@@ -82,30 +82,30 @@ Those decisions are left to the user.
 
 ### Backend (`apps/backend`)
 
-- NestJS
-- TypeScript
-- PostgreSQL
-- NeonDB
-- Google OAuth
-- JWT-based session tokens
-- Drizzle ORM
+* NestJS
+* TypeScript
+* PostgreSQL
+* NeonDB
+* Google OAuth
+* JWT-based session tokens
+* Drizzle ORM
 
 ### Frontend (`apps/frontend`)
 
-- React
-- Vite
-- TailwindCSS
-- TypeScript
-- Google OAuth
+* React
+* Vite
+* TailwindCSS
+* TypeScript
+* Google OAuth
 
 ### Shared (`packages/shared-types`)
 
-- TypeScript types shared between the frontend and backend, consumed as `@repo/shared-types`
+* TypeScript types shared between the frontend and backend, consumed as `@repo/shared-types`
 
 ### Tooling
 
-- npm workspaces
-- Turborepo
+* npm workspaces
+* Turborepo
 
 ---
 
@@ -113,11 +113,11 @@ Those decisions are left to the user.
 
 You need:
 
-- Node.js (LTS recommended)
-- npm (v7+ for workspaces)
-- A Google Cloud project
-- Google OAuth credentials
-- A NeonDB account and PostgreSQL database
+* Node.js (LTS recommended)
+* npm (v7+ for workspaces)
+* A Google Cloud project
+* Google OAuth credentials
+* A NeonDB account and PostgreSQL database
 
 ---
 
@@ -149,8 +149,8 @@ apps/
 
 Use the example files as the source of truth for required environment variables:
 
-- Backend example: [`apps/backend/.env.example`](apps/backend/.env.example)
-- Frontend example: [`apps/frontend/.env.example`](apps/frontend/.env.example)
+* Backend example: [`apps/backend/.env.example`](apps/backend/.env.example)
+* Frontend example: [`apps/frontend/.env.example`](apps/frontend/.env.example)
 
 Copy each example file to `.env` before starting the application.
 
@@ -245,8 +245,8 @@ If the application is deployed later, add the appropriate production origin as w
 
 Google provides:
 
-- Client ID
-- Client Secret
+* Client ID
+* Client Secret
 
 The **Client ID** is safe to use in the frontend and is also required by the backend.
 
@@ -325,6 +325,8 @@ Use the connection string provided by **your Neon project** rather than the exam
 
 The backend uses [Drizzle ORM](https://orm.drizzle.team/) to define and manage the PostgreSQL schema. The schema is defined in [`apps/backend/src/schema.ts`](apps/backend/src/schema.ts), and Drizzle Kit is configured in [`apps/backend/src/config/drizzle.config.ts`](apps/backend/src/config/drizzle.config.ts).
 
+### Generate and Apply Migrations
+
 After making a schema change, open a terminal in the `apps/backend` directory and generate a migration:
 
 ```bash
@@ -349,7 +351,19 @@ You can also run the migration command directly:
 npx drizzle-kit migrate --config src/config/drizzle.config.ts
 ```
 
-**Important:** `db:generate` creates the migration files but does not update NeonDB. `db:migrate` applies the generated migrations and pushes the schema changes to NeonDB. Repeat both steps whenever you make a schema change or update.
+### Push Schema Changes Directly
+
+For development, you can also push the current Drizzle schema directly to the database without generating migration files:
+
+```bash
+npm run db:push
+```
+
+This is useful when you are iterating on the schema locally and do not need to create migration files for each change.
+
+For changes that should be tracked as migrations, use the `db:generate` followed by `db:migrate` workflow instead.
+
+**Important:** `db:generate` creates the migration files but does not update NeonDB. `db:migrate` applies the generated migrations and pushes the schema changes to NeonDB. `db:push` applies the current schema directly without generating migration files.
 
 ---
 
@@ -363,14 +377,14 @@ npm run dev
 
 This uses Turbo to:
 
-- Start the NestJS backend
-- Start the Vite frontend
-- Stream logs with app prefixes
+* Start the NestJS backend
+* Start the Vite frontend
+* Stream logs with app prefixes
 
 ### Default Ports
 
-- Backend: `http://localhost:3000`
-- Frontend: `http://localhost:5173`
+* Backend: `http://localhost:3000`
+* Frontend: `http://localhost:5173`
 
 Make sure the frontend URL matches the URL configured in:
 
@@ -419,10 +433,10 @@ Google is responsible for authenticating the user.
 
 The backend is responsible for:
 
-- Verifying the Google authentication credential
-- Establishing trust in the authenticated Google account
-- Issuing the application's JWT
-- Authenticating subsequent API requests
+* Verifying the Google authentication credential
+* Establishing trust in the authenticated Google account
+* Issuing the application's JWT
+* Authenticating subsequent API requests
 
 This keeps the frontend and backend independently deployable while still providing a clear authentication boundary.
 
@@ -460,9 +474,9 @@ The NeonDB connection string should also be treated as confidential because it c
 
 Even with authentication included:
 
-- Frontend and backend are **not tightly coupled**
-- They can be deployed independently
-- Shared packages are optional and can evolve as the project grows
-- API communication remains explicit
+* Frontend and backend are **not tightly coupled**
+* They can be deployed independently
+* Shared packages are optional and can evolve as the project grows
+* API communication remains explicit
 
 Authentication establishes **trust**, not architectural dependency.
