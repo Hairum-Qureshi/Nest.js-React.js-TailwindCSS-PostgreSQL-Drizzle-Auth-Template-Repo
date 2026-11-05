@@ -169,10 +169,10 @@ PORT=3000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
 
-GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
-GOOGLE_OAUTH_CLIENT_SECRET=your_google_oauth_client_secret_here
+GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=your-google-client-secret
 
-NEON_DB_URL=your_neon_db_url_here
+NEON_DB_URL=postgresql://username:password@your-host.neon.tech/database?sslmode=require
 ```
 
 ### Frontend
